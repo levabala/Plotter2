@@ -1,0 +1,127 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Drawing;
+
+namespace Plotter2
+{
+    class PointsManager
+    {
+        List<PointF> points;
+        public List<List<PointF>> layers = new List<List<PointF>>();
+        public float xRange, yRange;
+        public float leftLimit, rightLimit;
+        public float minPointsCount = 1500;
+        public int ActiveLayerIndex = 0;
+        public float myzoom, mymaxZoom;
+        public int leftindexP, rightindexP, leftindexL, rightindexL;
+        public int outpointsCount;
+        public PointsManager(List<PointF> ps)
+        {
+            points = ps;
+            xRange = points[points.Count - 1].X - points[0].X;
+
+            leftLimit = points[0].X;
+            rightLimit = points[points.Count - 1].X;
+        }
+
+        public void createLayers()
+        {
+            float count = points.Count/2;
+            int step = 1;
+            layers.Add(points);
+            do
+            {
+                List<PointF> layer = new List<PointF>();
+                step = (int)(points.Count / count);
+                for (int i = 0; i < points.Count-step; i += step)
+                {
+                    PointF[] minmax = getMinAndMax(points.GetRange(i, step));
+                    if (minmax[0].X > minmax[1].X)
+                    {
+                        layer.Add(minmax[1]);
+                        layer.Add(minmax[0]);
+                    }
+                    else
+                    {
+                        layer.Add(minmax[0]);
+                        layer.Add(minmax[1]);
+                    }                    
+                }                
+                layers.Add(layer);
+                count /= 2;
+            } while (count > minPointsCount);
+        }
+
+        public List<PointF> getPointsInRange(float leftx, float rightx)
+        {
+            int[] bord1 = getBorders(points, leftx, rightx);
+            int i1 = bord1[1];
+            int i2 = bord1[0];
+
+            /*if (i1 == -1) i1 = points.Count;
+            if (i2 == -1) i2 = 0;*/
+
+            float psCount = i1 - i2;
+            if (psCount == 0) return new List<PointF>();
+
+            float zoom = psCount / 1920f;
+            myzoom = zoom;
+            float topZoom = points.Count / 1920f; // minPointsCount;
+            mymaxZoom = topZoom;
+            float step = topZoom / layers.Count;
+
+            int layerIndex = (int)(zoom / step);
+            if (layerIndex < 0) layerIndex = 0;
+            ActiveLayerIndex = layerIndex;
+
+            List<PointF> currLayer = layers[layerIndex];
+            int[] bord2 = getBorders(currLayer, leftx, rightx);
+            int startI = bord2[0];// currLayer.FindIndex(p => p.X >= leftx);
+            int endI = bord2[1];//currLayer.FindIndex(p => p.X >= rightx);
+
+            if (startI < 0) startI = 0;
+
+            List<PointF> outPoints = currLayer.GetRange(startI, endI - startI);
+            outpointsCount = outPoints.Count;
+
+            leftindexP = i2;
+            rightindexP = i1;
+            leftindexL = startI;
+            rightindexL = endI;
+
+            return outPoints;
+        }
+
+        private int[] getBorders(List<PointF> ps, float lx, float rx)
+        {
+            int si = 0;
+            int ei = ps.Count-1;
+            foreach (PointF p in ps)
+            {
+                if (p.X >= lx) break;
+                si++;
+            }
+            for (int i = ps.Count-1; i > 0; i--)
+            {
+                if (ps[i].X <= rx) break;
+                ei--;
+            }
+            return new int[] { si, ei };
+        }
+                
+        private PointF[] getMinAndMax(List<PointF> ps)
+        {
+            PointF[] minmax = new PointF[] {new PointF(ps[0].X, ps[0].Y), new PointF(0,0)}; //[0] - min, [1] - max            
+            foreach (PointF p in ps)
+            {
+                if (minmax[0].Y > p.Y) minmax[0] = p;
+                if (minmax[1].Y < p.Y) minmax[1] = p;
+            }
+
+            return minmax;
+        }
+    }
+}
