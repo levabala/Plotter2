@@ -25,7 +25,9 @@ namespace Plotter2
         bool averageLine = true;
         PointsManager pm;
 
-
+        Font smallFont = new Font("Arial Narrow", 8);
+        Pen xGridPen = new Pen(Brushes.Blue, 1);
+        Pen yGridPen = new Pen(Brushes.Green, 1);
         /*{
             new PointF(0,0),
             new PointF(10,20),
@@ -60,6 +62,9 @@ namespace Plotter2
             leftX = points[0].X;
             rightX = points[points.Count - 1].X;
 
+            xGridPen.DashPattern = new float[] { 1, 5, 1 };
+            yGridPen.DashPattern = new float[] { 1, 5, 1 };
+
             pm = new PointsManager(points);
             pm.createLayers();            
 
@@ -91,12 +96,128 @@ namespace Plotter2
             g.DrawString("Active layer: " + pm.ActiveLayerIndex.ToString(), Font, Brushes.Red, new PointF(10, 70));
             g.DrawString("Points drawed: " + toDrawArr.Length.ToString(), Font, Brushes.Red, new PointF(10, 85));
 
+            drawAxises(g);
+
             g.Transform = m;                        
 
             if (toDrawArr.Length <= 1) return;
 
             if (averageLine) g.DrawBeziers(avLinePen, pm.averagePoints);
             g.DrawLines(myPen, toDrawArr);  
+        }
+
+        public PointF ScreenPoint(PointF scr)
+        {
+            Matrix mr = m.Clone();
+            //mr.Invert();
+            PointF[] po = new PointF[] { new PointF(scr.X, scr.Y) };
+            mr.TransformPoints(po);
+            return po[0];
+        }
+
+        private void drawAxises(Graphics g)
+        {
+            /*PointF axes_step_pt = new PointF(0, 0);
+            PointF axes_step_pt2 = new PointF(100, 50);
+            PointF axes_step = DataPoint(axes_step_pt);
+            PointF axes_step2 = DataPoint(axes_step_pt2);
+
+            float dx = axes_step2.X - axes_step.X;
+            float dy = axes_step2.Y - axes_step.Y;
+
+            int power = 10;
+
+            double lg_x = Math.Log(Math.Abs(dx), power);
+            double lg_y = Math.Log(Math.Abs(dy), power);
+
+            double pow_x = Math.Pow(power, Math.Floor(lg_x) + 1);
+            double pow_y = Math.Pow(power, Math.Floor(lg_y) + 1);
+
+            int step_x = (int)(pow_x / 2);
+            if (step_x < 1) step_x = 1;
+            int step_y = (int)(pow_y / 2);
+            if (step_y < 1) step_y = 1;
+
+            int x = 0;
+            PointF xp = ScreenPoint(new PointF(x, 0));
+            if (xp.X < 0) xp.X = 0;
+            do
+            {
+                xp = ScreenPoint(new PointF(x, 0));
+                //g.DrawLine(Pens.Blue, xp.X, xp.Y, xp.X, xp.Y + 20);
+                g.DrawLine(Pens.Blue, xp.X, 0, xp.X, 10);
+                g.DrawLine(xGridPen, xp.X, 10, xp.X, ClientRectangle.Height);
+                g.DrawString(x.ToString(), smallFont, Brushes.Blue, xp.X, +10);
+                x += step_x;
+            } while (xp.X < ClientRectangle.Width);
+
+            int y = 0;
+            PointF yp = ScreenPoint(new PointF(0, y));
+            do
+            {
+                yp = ScreenPoint(new PointF(0, y));
+                //g.DrawLine(Pens.Red, yp.X, yp.Y, yp.X-20, yp.Y);
+                g.DrawLine(Pens.Red, 0, yp.Y, 10, yp.Y);
+                g.DrawLine(yGridPen, 10, yp.Y, ClientRectangle.Width, yp.Y);
+                g.DrawString(y.ToString(), smallFont, Brushes.Red, 10, yp.Y);
+                y += step_y;
+            } while (yp.Y > 0);*/
+            PointF axes_step_pt = new PointF(0, 0);
+            PointF axes_step_pt2 = new PointF(100, 50);
+            PointF axes_step = DataPoint(axes_step_pt);
+            PointF axes_step2 = DataPoint(axes_step_pt2);
+
+            float dx = axes_step2.X - axes_step.X;
+            float dy = axes_step2.Y - axes_step.Y;
+
+            int power = 10;
+
+            double lg_x = Math.Log(Math.Abs(dx), power);
+            double lg_y = Math.Log(Math.Abs(dy), power);
+
+            double pow_x = Math.Pow(power, Math.Floor(lg_x) + 1);
+            double pow_y = Math.Pow(power, Math.Floor(lg_y) + 1);
+
+            int step_x = (int)(pow_x / 2);
+
+            if (step_x < 1) step_x = 1;
+            int step_y = (int)(pow_y / 2);
+            if (step_y < 1) step_y = 1;
+
+            int kx = 0;
+            PointF origin = DataPoint(new PointF(0, ClientRectangle.Height));
+            int x = ((int)(origin.X / step_x) + 1) * step_x;
+            PointF xp = ScreenPoint(new PointF(x, 0));
+            do
+            {
+                xp = ScreenPoint(new PointF(x, 0));
+                //g.DrawLine(Pens.Blue, xp.X, xp.Y, xp.X, xp.Y + 20);
+                g.DrawLine(Pens.Blue, xp.X, 0, xp.X, 10);
+                g.DrawLine(xGridPen, xp.X, 10, xp.X, ClientRectangle.Height);
+                g.DrawString(x.ToString(), smallFont, Brushes.Blue, xp.X + 3, -2);
+                x += step_x;
+                kx += 1;
+            } while (xp.X < ClientRectangle.Width && kx < 22);
+
+            int ky = 0;
+            int y = 0; // (int)origin.Y;
+            PointF yp = ScreenPoint(new PointF(0, y));
+            do
+            {
+                yp = ScreenPoint(new PointF(0, y));
+                //g.DrawLine(Pens.Red, yp.X, yp.Y, yp.X-20, yp.Y);
+                g.DrawLine(Pens.Red, 0, yp.Y, 10, yp.Y);
+                g.DrawLine(yGridPen, 10, yp.Y, ClientRectangle.Width, yp.Y);
+                g.DrawString(y.ToString(), smallFont, Brushes.Red, 0, yp.Y);
+                y += step_y;
+                ky += 1;
+            } while (yp.Y > 0 && ky < 22);
+
+            g.DrawString(
+             String.Format("sx: {0}\nkx: {1}\nsy:{2}\nky:{3}",
+             step_x, kx, step_y, ky),
+             this.Font, Brushes.Green, 50, 150
+             );
         }
 
         private void FileToPoints(string path)
