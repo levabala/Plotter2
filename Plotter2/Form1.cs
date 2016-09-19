@@ -75,20 +75,6 @@ namespace Plotter2
             MouseUp += Form1_MouseUp;
             MouseMove += Form1_MouseMove;
 
-            /*
-            fillLayers();
-
-            restartMatrix();            
-            getPointsToDraw();
-
-            wheelEndTimer.Interval = 200;
-            wheelEndTimer.Tick += WheelEndTimer_Tick;
-
-            Paint += Form1_Paint;
-            MouseWheel += Form1_MouseWheel;
-            MouseUp += Form1_MouseUp;
-            MouseMove += Form1_MouseMove;*/
-
             Invalidate();
         }
 
@@ -129,52 +115,7 @@ namespace Plotter2
                 if (rpm > max) max = rpmf;
                 else if (rpm < min) min = rpmf;
             }
-        }
-
-        /*private void fillLayers()
-        {
-            float count = points.Count;
-            float step = 1;
-            int index = 0;
-            do
-            {
-                List<PointF> layer = new List<PointF>();
-                step = points.Count / count;
-                for (float i = 0; i < points.Count; i += step)
-                {
-                    index = (int)i;
-                    layer.Add(points[index]);
-                }
-                layer.Add(points[points.Count - 1]);
-                layers.Add(layer);
-                count /= coeff;
-            } while (count > ClientSize.Width);
-            if (layers.Count == 0) layers.Add(points);
-            GetLayerIndex();
-        }*/
-
-        /*float lastW = 0f;
-        private void GetLayerIndex()
-        {            
-            int index = 0;
-            int pointsCount = cam.getPointsCount();
-            float zoom = pointsCount / ClientSize.Width;
-            float topZoom = points.Count / ClientSize.Width;
-            float step = topZoom / layers.Count;
-            bool aa = false;
-
-            if (zoom <= 1)
-                index = layers.Count - 1;
-            else
-            {
-                index = (int)(zoom / step);
-                aa = true;
-            }
-
-            Text = "zoom: " + zoom.ToString() + " topZoom:" + topZoom.ToString() + " step: " + step.ToString() + " || " + (zoom / step).ToString() + " -> " + index.ToString() + " " + aa.ToString();
-            lastW = cam.width;
-            ActiveLayerIndex = index;            
-        }*/        
+        }      
 
         private void restartMatrix()
         {
@@ -211,16 +152,14 @@ namespace Plotter2
             float z = e.Delta > 0 ? 1.1f : 1.0f / 1.1f;
             float kx = z;
             float ky = z;
-            if (ModifierKeys.HasFlag(Keys.Control) || inXscale) ky = 1; //!(m.Elements[1] > -1e-5 && m.Elements[1] < -0.05) 
-            if (ModifierKeys.HasFlag(Keys.Shift) || inYscale) kx = 1; //!(m.Elements[0] > 0.05 && m.Elements[0] < 1000)
+            if (ModifierKeys.HasFlag(Keys.Control) || inXscale) ky = 1;
+            if (ModifierKeys.HasFlag(Keys.Shift) || inYscale) kx = 1;
             PointF po = DataPoint(e.Location);
             m.Translate(po.X, po.Y);
             m.Scale(kx, ky);
             m.Translate(-po.X, -po.Y);
 
             Text += " |" + kx.ToString() + "| ";
-            /*cam.clientW = DataPoint(cam.rightP).X - DataPoint(cam.leftP).X;
-            cam.clientH = ClientSize.Height * m.Elements[4];*/
                         
             Invalidate();
 
@@ -257,9 +196,6 @@ namespace Plotter2
             PointF newlp = DataPoint(new PointF(0f, 0f));
             PointF newrp = DataPoint(new PointF(ClientSize.Width, ClientSize.Height));
 
-            /*cam.MoveTo(newlp, newrp);
-            cam.detectPointsToDraw();*/
-
             leftX = newlp.X;
             rightX = newrp.X;
 
@@ -276,9 +212,6 @@ namespace Plotter2
 
             leftX = newlp.X;
             rightX = newrp.X;
-            /*cam.detectStep = points.Count / ClientSize.Width;
-            cam.MoveTo(newlp, newrp);
-            cam.detectPointsToDraw();*/
 
             getPointsToDraw();
             Invalidate();
@@ -286,30 +219,8 @@ namespace Plotter2
 
         private void getPointsToDraw()
         {
-            /*GetLayerIndex();
-            cam.points = layers[ActiveLayerIndex];
-
-            List<PointF> toDraw = new List<PointF>();
-
-            cam.detectPointsToDraw();
-            toDraw = cam.toDraw;
-
-            toDrawArr = toDraw.ToArray();*/
-
             toDrawArr = pm.getPointsInRange(leftX, rightX).ToArray();
             PointF scale = GetMatrixScale();
-            //Text = pm.ActiveLayerIndex.ToString() + " zoom: " + pm.myzoom.ToString() + " topZoom: " + pm.mymaxZoom.ToString() + "  scaleX: " + scale.X + " scaleY: " + scale.Y;
         }
-
-        /*private void Form1_Paint(object sender, PaintEventArgs e)
-        {
-            myPen.LineJoin = LineJoin.Bevel;
-            Graphics g = e.Graphics;
-
-            g.Transform = m;
-
-            if (toDrawArr.Length <= 1) return;           
-            g.DrawLines(myPen, toDrawArr);            
-        }*/
     }
 }
