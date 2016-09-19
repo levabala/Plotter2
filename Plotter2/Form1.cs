@@ -12,21 +12,17 @@ using System.Windows.Forms;
 namespace Plotter2
 {
     public partial class Form1 : Form
-    {
-        Camera cam;
+    {        
         Matrix m;
-        float max, min, coeff;
+        float max, min;
         Pen myPen = new Pen(Color.Green, 1);
         PointF lastmousepos = new PointF(0f, 0f);
         Timer wheelEndTimer = new Timer();
         PointF[] toDrawArr;
-        List<PointF> points = new List<PointF>();
-        int ActiveLayerIndex = 0;
-
-        string msg1, msg2;
-
+        List<PointF> points = new List<PointF>(); 
+        List<PointF> pointsDrawedLog = new List<PointF>();
         float leftX, rightX;
-
+        bool averageLine = true;
         PointsManager pm;
 
 
@@ -58,9 +54,7 @@ namespace Plotter2
         }
 
         private void Form1_Load(object sender, EventArgs e)
-        {
-            coeff = 1.5f;
-
+        {             
             FileToPoints(@"D:\work\test_6000_fast.raw");
             
             leftX = points[0].X;
@@ -98,8 +92,10 @@ namespace Plotter2
             Invalidate();
         }
 
+        Pen avLinePen = new Pen(Color.DarkBlue, 3);
         private void Form1_Paint1(object sender, PaintEventArgs e)
         {
+            myPen.LineJoin = LineJoin.Round;            
             Graphics g = e.Graphics;
             
             g.DrawString("Layer borders: " + pm.leftindexL.ToString() + ":" + pm.rightindexL.ToString() + " -> " + (pm.rightindexL-pm.leftindexL).ToString(), Font, Brushes.Red, new PointF(10, 10));
@@ -109,11 +105,12 @@ namespace Plotter2
             g.DrawString("Active layer: " + pm.ActiveLayerIndex.ToString(), Font, Brushes.Red, new PointF(10, 70));
             g.DrawString("Points drawed: " + toDrawArr.Length.ToString(), Font, Brushes.Red, new PointF(10, 85));
 
-            g.Transform = m;
+            g.Transform = m;                        
 
             if (toDrawArr.Length <= 1) return;
 
-            g.DrawLines(Pens.Green, toDrawArr);  
+            if (averageLine) g.DrawBeziers(avLinePen, pm.averagePoints);
+            g.DrawLines(myPen, toDrawArr);  
         }
 
         private void FileToPoints(string path)
@@ -127,7 +124,7 @@ namespace Plotter2
                 double tt = data[i] - data[i - 1];
                 double rpm = 60.0 / (tt * 1024 * 16e-9);
                 float rpmf = (float)rpm;
-                points.Add(new PointF((i), rpmf));
+                points.Add(new PointF((float)(data[i]*16e-3), rpmf));
                 //if (cr > 10000)continue;
                 if (rpm > max) max = rpmf;
                 else if (rpm < min) min = rpmf;
@@ -304,7 +301,7 @@ namespace Plotter2
             //Text = pm.ActiveLayerIndex.ToString() + " zoom: " + pm.myzoom.ToString() + " topZoom: " + pm.mymaxZoom.ToString() + "  scaleX: " + scale.X + " scaleY: " + scale.Y;
         }
 
-        private void Form1_Paint(object sender, PaintEventArgs e)
+        /*private void Form1_Paint(object sender, PaintEventArgs e)
         {
             myPen.LineJoin = LineJoin.Bevel;
             Graphics g = e.Graphics;
@@ -313,6 +310,6 @@ namespace Plotter2
 
             if (toDrawArr.Length <= 1) return;           
             g.DrawLines(myPen, toDrawArr);            
-        }
+        }*/
     }
 }

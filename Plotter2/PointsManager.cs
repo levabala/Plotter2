@@ -10,14 +10,16 @@ namespace Plotter2
     class PointsManager
     {
         List<PointF> points;
-        public List<List<PointF>> layers = new List<List<PointF>>();
+        public List<List<PointF>> layers;
         public float xRange, yRange;
         public float leftLimit, rightLimit;
-        public float minPointsCount = 1500;
+        public float minPointsCount = 2000;
         public int ActiveLayerIndex = 0;
         public float myzoom, mymaxZoom;
         public int leftindexP, rightindexP, leftindexL, rightindexL;
         public int outpointsCount;
+
+        public PointF[] averagePoints;        
         public PointsManager(List<PointF> ps)
         {
             points = ps;
@@ -25,34 +27,58 @@ namespace Plotter2
 
             leftLimit = points[0].X;
             rightLimit = points[points.Count - 1].X;
+
+            List<PointF> list = new List<PointF>();
+            int step = points.Count / 3400;
+            float buffer = 0;
+            int c = 0;
+            foreach (PointF p in points)
+            {
+                buffer += p.Y;
+                if (c >= step)
+                {
+                    list.Add(new PointF(p.X, buffer / c));
+                    buffer = 0;
+                    c = 0;
+                }
+                c++;
+            }
+            list = list.GetRange(0, 3301);
+            averagePoints = list.ToArray();
         }
 
         public void createLayers()
         {
-            float count = points.Count/2;
-            int step = 1;
+            layers = new List<List<PointF>>();
             layers.Add(points);
+            float count = points.Count/2;
+            int step = 1;            
             do
             {
-                List<PointF> layer = new List<PointF>();
-                step = (int)(points.Count / count);
-                for (int i = 0; i < points.Count-step; i += step)
-                {
-                    PointF[] minmax = getMinAndMax(points.GetRange(i, step));
-                    if (minmax[0].X > minmax[1].X)
-                    {
-                        layer.Add(minmax[1]);
-                        layer.Add(minmax[0]);
-                    }
-                    else
-                    {
-                        layer.Add(minmax[0]);
-                        layer.Add(minmax[1]);
-                    }                    
-                }                
-                layers.Add(layer);
                 count /= 2;
+                step = (int)(points.Count / count);
+                layers.Add(MakeConvolution(layers.Last(), step));                
             } while (count > minPointsCount);
+        }
+
+        private List<PointF> MakeConvolution(List<PointF> src, int step)
+        {
+            List<PointF> layer = new List<PointF>();            
+            for (int i = 0; i < points.Count - step; i += step)
+            {
+                PointF[] minmax = getMinAndMax(points.GetRange(i, step));
+                if (minmax[0].X > minmax[1].X)
+                {
+                    layer.Add(minmax[1]);
+                    layer.Add(minmax[0]);
+                }
+                else
+                {
+                    layer.Add(minmax[0]);
+                    layer.Add(minmax[1]);
+                }
+            }
+            return layer;
         }
 
         public List<PointF> getPointsInRange(float leftx, float rightx)
@@ -73,7 +99,19 @@ namespace Plotter2
             mymaxZoom = topZoom;
             float step = topZoom / layers.Count;
 
-            int layerIndex = (int)(zoom / step);
+            int layerIndex = 0;
+            do
+            {
+                int[] bord = getBorders(layers[layerIndex], leftx, rightx);
+                int ps = bord[1] - bord[0];
+                if (ps <= 3000) break;
+                layerIndex++;
+            } while (layerIndex < layers.Count-1);
+
+            /**/
+            //int layerIndex = (int)(zoom / step);
+            /**/
+
             if (layerIndex < 0) layerIndex = 0;
             ActiveLayerIndex = layerIndex;
 
@@ -119,6 +157,7 @@ namespace Plotter2
             {
                 if (minmax[0].Y > p.Y) minmax[0] = p;
                 if (minmax[1].Y < p.Y) minmax[1] = p;
+                //minmax[1].X = minmax[0].X;
             }
 
             return minmax;
