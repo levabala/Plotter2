@@ -25,7 +25,7 @@ namespace Plotter2
         bool averageLine = true;
         PointsManager pm;
 
-        Font smallFont = new Font("Arial Narrow", 8);
+        Font smallFont = new Font("Calibri", 13, FontStyle.Bold);
         Pen xGridPen = new Pen(Brushes.Blue, 1);
         Pen yGridPen = new Pen(Brushes.Green, 1);
         /*{
@@ -57,7 +57,7 @@ namespace Plotter2
 
         private void Form1_Load(object sender, EventArgs e)
         {
-            string data_source = @"D:/work/test_6000_fast.raw";
+            string data_source = @"D:\work\RAWS\test_zero_cross_velocity.raw";
 
             string[] args = Environment.GetCommandLineArgs();
             if (args.Length > 1 && System.IO.File.Exists(args[1])) data_source = args[1];
@@ -101,7 +101,7 @@ namespace Plotter2
             g.DrawString("Active layer: " + pm.ActiveLayerIndex.ToString(), Font, Brushes.Red, new PointF(10, 70));
             g.DrawString("Points drawed: " + toDrawArr.Length.ToString(), Font, Brushes.Red, new PointF(10, 85));
 
-            drawAxises(g);
+            DrawAxes(g);
 
             g.Transform = m;                        
 
@@ -120,55 +120,10 @@ namespace Plotter2
             return po[0];
         }
 
-        private void drawAxises(Graphics g)
+        private void DrawAxes(Graphics g)
         {
-            /*PointF axes_step_pt = new PointF(0, 0);
-            PointF axes_step_pt2 = new PointF(100, 50);
-            PointF axes_step = DataPoint(axes_step_pt);
-            PointF axes_step2 = DataPoint(axes_step_pt2);
-
-            float dx = axes_step2.X - axes_step.X;
-            float dy = axes_step2.Y - axes_step.Y;
-
-            int power = 10;
-
-            double lg_x = Math.Log(Math.Abs(dx), power);
-            double lg_y = Math.Log(Math.Abs(dy), power);
-
-            double pow_x = Math.Pow(power, Math.Floor(lg_x) + 1);
-            double pow_y = Math.Pow(power, Math.Floor(lg_y) + 1);
-
-            int step_x = (int)(pow_x / 2);
-            if (step_x < 1) step_x = 1;
-            int step_y = (int)(pow_y / 2);
-            if (step_y < 1) step_y = 1;
-
-            int x = 0;
-            PointF xp = ScreenPoint(new PointF(x, 0));
-            if (xp.X < 0) xp.X = 0;
-            do
-            {
-                xp = ScreenPoint(new PointF(x, 0));
-                //g.DrawLine(Pens.Blue, xp.X, xp.Y, xp.X, xp.Y + 20);
-                g.DrawLine(Pens.Blue, xp.X, 0, xp.X, 10);
-                g.DrawLine(xGridPen, xp.X, 10, xp.X, ClientRectangle.Height);
-                g.DrawString(x.ToString(), smallFont, Brushes.Blue, xp.X, +10);
-                x += step_x;
-            } while (xp.X < ClientRectangle.Width);
-
-            int y = 0;
-            PointF yp = ScreenPoint(new PointF(0, y));
-            do
-            {
-                yp = ScreenPoint(new PointF(0, y));
-                //g.DrawLine(Pens.Red, yp.X, yp.Y, yp.X-20, yp.Y);
-                g.DrawLine(Pens.Red, 0, yp.Y, 10, yp.Y);
-                g.DrawLine(yGridPen, 10, yp.Y, ClientRectangle.Width, yp.Y);
-                g.DrawString(y.ToString(), smallFont, Brushes.Red, 10, yp.Y);
-                y += step_y;
-            } while (yp.Y > 0);*/
             PointF axes_step_pt = new PointF(0, 0);
-            PointF axes_step_pt2 = new PointF(100, 50);
+            PointF axes_step_pt2 = new PointF(70, 50);
             PointF axes_step = DataPoint(axes_step_pt);
             PointF axes_step2 = DataPoint(axes_step_pt2);
 
@@ -183,10 +138,11 @@ namespace Plotter2
             double pow_x = Math.Pow(power, Math.Floor(lg_x) + 1);
             double pow_y = Math.Pow(power, Math.Floor(lg_y) + 1);
 
-            int step_x = (int)(pow_x / 2);
+            int step_x = (int)(pow_x);
 
             if (step_x < 1) step_x = 1;
-            int step_y = (int)(pow_y / 2);
+
+            int step_y = (int)(pow_y);
             if (step_y < 1) step_y = 1;
 
             int kx = 0;
@@ -202,7 +158,7 @@ namespace Plotter2
                 g.DrawString(x.ToString(), smallFont, Brushes.Blue, xp.X + 3, -2);
                 x += step_x;
                 kx += 1;
-            } while (xp.X < ClientRectangle.Width && kx < 22);
+            } while (xp.X < ClientRectangle.Width && kx < 32);
 
             int ky = 0;
             int y = 0; // (int)origin.Y;
@@ -216,15 +172,18 @@ namespace Plotter2
                 g.DrawString(y.ToString(), smallFont, Brushes.Red, 0, yp.Y);
                 y += step_y;
                 ky += 1;
-            } while (yp.Y > 0 && ky < 22);
+            } while (yp.Y > 0 && ky < 32);
 
             g.DrawString(
-             String.Format("sx: {0}\nkx: {1}\nsy:{2}\nky:{3}",
-             step_x, kx, step_y, ky),
-             this.Font, Brushes.Green, 50, 150
-             );
+                String.Format("sx: {0}\nkx: {1}\nsy:{2}\nky:{3}",
+                step_x, kx, step_y, ky),
+                this.Font, Brushes.Green, 50, 150
+                );
+
         }
 
+        float lastrpm = 0;
+        List<float[]> unsualPoints = new List<float[]>();
         private void FileToPoints(string path)
         {            
             Int64[] data = Parser.parseLM(path, 242);
@@ -236,10 +195,11 @@ namespace Plotter2
                 double tt = data[i] - data[i - 1];
                 double rpm = 60.0 / (tt * 1024 * 16e-9);
                 float rpmf = (float)rpm;
-                points.Add(new PointF((float)(data[i]*16e-3), rpmf));
-                //if (cr > 10000)continue;
+                points.Add(new PointF((float)(data[i]*16e-3), rpmf));                
                 if (rpm > max) max = rpmf;
                 else if (rpm < min) min = rpmf;
+                if (Math.Abs(rpmf - lastrpm) > 2000) unsualPoints.Add(new float[] { i, rpmf });
+                lastrpm = rpmf; 
             }
         }      
 
