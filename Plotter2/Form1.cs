@@ -56,8 +56,13 @@ namespace Plotter2
         }
 
         private void Form1_Load(object sender, EventArgs e)
-        {             
-            FileToPoints(@"D:\work\test_6000_fast.raw");
+        {
+            string data_source = @"D:/work/test_6000_fast.raw";
+
+            string[] args = Environment.GetCommandLineArgs();
+            if (args.Length > 1 && System.IO.File.Exists(args[1])) data_source = args[1];
+
+            FileToPoints(data_source);
             
             leftX = points[0].X;
             rightX = points[points.Count - 1].X;
